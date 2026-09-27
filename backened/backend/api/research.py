@@ -82,14 +82,8 @@ def list_research_jobs(
     }
 
 
-@router.post(
-    "/",
-    response_model=ResearchResponse,
-)
-def create_research(
-    request: ResearchRequest,
-    user=Depends(get_current_user),
-):
+@router.post("/",response_model=ResearchResponse)
+def create_research(request: ResearchRequest,user=Depends(get_current_user)):
 
     # Validating query
 

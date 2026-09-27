@@ -1,12 +1,12 @@
 <p align="center"><div align="center">
 
-<img src="https://github.com/adityatygi/Meridian---AI-Market-Research-Strategy-Engine/raw/main/assets/Meridian%20Logo.png" alt="Meridian Logo" width="180"/>
+<img src="https://github.com/adityatygi/McKinsey%20%26%20Company---AI-Market-Research-Strategy-Engine/raw/main/assets/McKinsey%20%26%20Company%20Logo.png" alt="McKinsey & Company Logo" width="180"/>
 
-# Meridian - AI Market Research & Strategy Engine
+# McKinsey & Company - AI Market Research & Strategy Engine
 
 ### 🚀 View Live Application
 
-**https://meridian-fronted-resarch-engine.vercel.app/**
+**https://mckinsey-company-fronted-resarch-engine.vercel.app/**
 
 ### An autonomous multi-agent system that turns a research brief into a fully cited, consulting-grade market report
 
@@ -83,13 +83,13 @@ Traditional market research can require significant manual effort across multipl
 * Organizing findings into a structured report
 * Maintaining a clear citation trail for important claims
 
-Meridian automates this workflow through a multi-agent AI pipeline while keeping the research process evidence-grounded and traceable.
+McKinsey & Company automates this workflow through a multi-agent AI pipeline while keeping the research process evidence-grounded and traceable.
 
 <br/>
 
 ## Product Goal
 
-The goal of Meridian is to provide an AI-powered research assistant that transforms a natural-language research brief into a structured, evidence-grounded market research report.
+The goal of McKinsey & Company is to provide an AI-powered research assistant that transforms a natural-language research brief into a structured, evidence-grounded market research report.
 
 The system combines:
 
@@ -389,7 +389,7 @@ src/
 
 ### Design System
 
-The UI follows a navy-and-gold "Meridian" consulting brand intended to evoke a strategy-consulting deliverable: dark navy chrome, gold accent highlights, and clean, data-forward typography.
+The UI follows a navy-and-gold "McKinsey & Company" consulting brand intended to evoke a strategy-consulting deliverable: dark navy chrome, gold accent highlights, and clean, data-forward typography.
 
 | Concern   | Library                                |
 | --------- | -------------------------------------- |
@@ -598,7 +598,7 @@ http://localhost:5173
 
 ## Reliability & Optimization
 
-Meridian includes several mechanisms designed to improve the reliability of the research pipeline.
+McKinsey & Company includes several mechanisms designed to improve the reliability of the research pipeline.
 
 ### Retry Logic
 
@@ -624,7 +624,7 @@ If an essential stage produces an empty result, the pipeline stops rather than s
 
 <div align="center">
 
-**This repository represents the current deployed state of the Meridian AI Market Research & Strategy Engine**, a working end-to-end multi-agent research application spanning authentication, a seven-stage AI pipeline, evidence traceability, and a polished consulting-styled UI.
+**This repository represents the current deployed state of the McKinsey & Company AI Market Research & Strategy Engine**, a working end-to-end multi-agent research application spanning authentication, a seven-stage AI pipeline, evidence traceability, and a polished consulting-styled UI.
 
 <br/>
 
@@ -646,27 +646,27 @@ If an essential stage produces an empty result, the pipeline stops rather than s
 
 ### 🚀 Live Application
 
-**https://meridian-fronted-resarch-engine.vercel.app/**
+**https://mckinsey-company-fronted-resarch-engine.vercel.app/**
 
 <br/>
 
 ## Screenshots
 
-### 1. Meridian Sign Up Page
+### 1. McKinsey & Company Sign Up Page
 
-<img width="1920" height="876" alt="Meridian_Sign_Up" src="https://github.com/user-attachments/assets/fdb29a53-0905-4148-88ed-8c6cafb0357b" />
+<img width="1920" height="876" alt="McKinsey_Company_Sign_Up" src="https://github.com/user-attachments/assets/fdb29a53-0905-4148-88ed-8c6cafb0357b" />
 
-### 2. Meridian Query Input
+### 2. McKinsey & Company Query Input
 
-<img width="1920" height="880" alt="Meridian_Query_Input" src="https://github.com/user-attachments/assets/f4888fed-184b-4cc6-beaa-1d8f6594cf00" />
+<img width="1920" height="880" alt="McKinsey_Company_Query_Input" src="https://github.com/user-attachments/assets/f4888fed-184b-4cc6-beaa-1d8f6594cf00" />
 
-### 3. Meridian Query Processing
+### 3. McKinsey & Company Query Processing
 
-<img width="1920" height="880" alt="Meridian_Query_running(75%)" src="https://github.com/user-attachments/assets/2536c9bc-8116-44ca-a2b9-f86f77a46bbb" />
+<img width="1920" height="880" alt="McKinsey_Company_Query_running(75%)" src="https://github.com/user-attachments/assets/2536c9bc-8116-44ca-a2b9-f86f77a46bbb" />
 
-### 4. Meridian Output Report
+### 4. McKinsey & Company Output Report
 
-<img width="1920" height="882" alt="Meridian_Output_Report" src="https://github.com/user-attachments/assets/51b8224c-2fbe-4dfc-9ffe-7286d39ecbaa" />
+<img width="1920" height="882" alt="McKinsey_Company_Output_Report" src="https://github.com/user-attachments/assets/51b8224c-2fbe-4dfc-9ffe-7286d39ecbaa" />
 
 <br/>
 
