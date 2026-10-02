@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, coon, Save, Sun } from "lucide-react";
+import { Check, Moon, Save, Sun } from "lucide-react";
 import Shell from "../components/Shell";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";

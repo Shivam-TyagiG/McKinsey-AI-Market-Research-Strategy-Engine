@@ -7,7 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import logo from "../assets/cK_Logo.png";
+import logo from "../assets/MK_Logo.png";
 
 export default function AuthLayout({ eyebrow, title, subtitle, children, dark = false }) {
   return (
