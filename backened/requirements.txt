@@ -1,0 +1,15 @@
+# Backend API and ASGI server
+fastapi
+uvicorn[standard]
+
+# Settings and request validation
+pydantic
+pydantic-settings
+python-dotenv
+
+# Supabase database and authentication
+supabase
+
+# Research pipeline: Gemini and Tavily
+google-genai
+tavily-python
