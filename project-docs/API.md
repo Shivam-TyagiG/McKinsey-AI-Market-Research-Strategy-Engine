@@ -2,7 +2,7 @@
 
 ## Overview
 
-McKinsey & Company exposes a FastAPI backend for creating and managing AI-powered market research jobs.
+McKinsey AI Market Research Engine exposes a FastAPI backend for creating and managing AI-powered market research jobs.
 
 The API connects the frontend with the research pipeline and provides access to research jobs, sources, evidence, validations, and generated reports.
 
@@ -30,7 +30,7 @@ Starts a new research pipeline for the provided query.
 
 ### Response
 
-Creates a research job and starts the McKinsey & Company research pipeline.
+Creates a research job and starts the McKinsey AI Market Research Engine research pipeline.
 
 The pipeline processes the query through planning, research, evidence extraction, validation, report generation, and citation linking.
 

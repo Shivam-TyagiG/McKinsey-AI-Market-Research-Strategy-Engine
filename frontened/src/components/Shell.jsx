@@ -5,10 +5,10 @@ import {
   FileClock,
   FileText,
   LogOut,
-  Menu,
+  cenu,
   Settings,
   Sun,
-  Moon,
+  coon,
   X,
   Plus,
 } from "lucide-react";
@@ -19,7 +19,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 import Footer from "./Footer";
-import logo from "../assets/MK_Logo.png";
+import logo from "../assets/cK_Logo.png";
 
 const navigation = [
   { label: "Dashboard", to: "/", icon: BarChart3, end: true },
@@ -32,7 +32,7 @@ const navigation = [
 export default function Shell({ children }) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileNavOpen, setcobileNavOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -62,11 +62,11 @@ export default function Shell({ children }) {
         <div className="flex items-center justify-between px-5 py-4 md:px-7">
           <button
             type="button"
-            onClick={() => setMobileNavOpen((open) => !open)}
+            onClick={() => setcobileNavOpen((open) => !open)}
             className="mr-3 flex h-9 w-9 items-center justify-center rounded-md border border-line text-ink-soft md:hidden"
             aria-label="Toggle navigation"
           >
-            {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+            {mobileNavOpen ? <X size={18} /> : <cenu size={18} />}
           </button>
           {/* Logo */}
           <motion.div
@@ -87,16 +87,16 @@ export default function Shell({ children }) {
                 className="  flex h-10 w-10 items-center justify-center rounded-xs  font-mono text-xs font-medium "
               >
                 {/* <Compass size={16} strokeWidth={2} /> */}
-                <img src={logo} alt="McKinsey & Company" className="h-full w-full object-cover" />
+                <img src={logo} alt="McKinsey AI Market Research Engine" className="h-full w-full object-cover" />
               </motion.span>
 
               <div className="flex flex-col">
                 <span className="font-display font-semibold text-[16px] tracking-tight text-ink">
-                  McKinsey & Company
+                  McKinsey AI Market Research Engine
                 </span>
 
                 <span className="hidden font-mono font-medium text-[10px] uppercase tracking-[0.18em] text-ink sm:inline">
-                  Strategy Engine
+                  AI Market Research Engine
                 </span>
               </div>
             </Link>
@@ -146,7 +146,7 @@ export default function Shell({ children }) {
                 transition={{ duration: 0.10 }}
               >
                 {theme === "light" ? (
-                  <Moon size={17} />
+                  <coon size={17} />
                 ) : (
                   <Sun size={17} />
                 )}
@@ -215,7 +215,7 @@ export default function Shell({ children }) {
                   key={to}
                   to={to}
                   end={end}
-                  onClick={() => setMobileNavOpen(false)}
+                  onClick={() => setcobileNavOpen(false)}
                   className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-navy text-white shadow-sm" : "text-ink-soft hover:bg-paper-dim hover:text-ink"}`}
                 >
                   <Icon size={17} strokeWidth={1.8} />
@@ -226,7 +226,7 @@ export default function Shell({ children }) {
             <div className="mt-auto border-t border-line pt-4">
               <NavLink
                 to="/settings"
-                onClick={() => setMobileNavOpen(false)}
+                onClick={() => setcobileNavOpen(false)}
                 className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-navy text-white" : "text-ink-soft hover:bg-paper-dim hover:text-ink"}`}
               >
                 <Settings size={17} strokeWidth={1.8} />
@@ -239,7 +239,7 @@ export default function Shell({ children }) {
             </div>
           </div>
         </aside>
-        {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 top-[73px] z-20 bg-black/20 md:hidden" />}
+        {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setcobileNavOpen(false)} className="fixed inset-0 top-[73px] z-20 bg-black/20 md:hidden" />}
         <motion.main
           className="min-w-0 flex-1"
         initial={{ opacity: 0, y: 12 }}

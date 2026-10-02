@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 
 // ICONS
-import { FaGithub } from "react-icons/fa6";
+
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { RiFlowChart } from "react-icons/ri";
 
@@ -24,7 +24,7 @@ export default function Footer() {
       <div className="mx-auto flex  max-w-6xl flex-col items-center gap-6 px-6 py-7 sm:px-8 md:flex-row md:items-center md:justify-between">
 
         <p className="text-sm text-ink-soft text-center">
-          © 2026 McKinsey & Company. AI-powered market research.
+          &copy; 2026 McKinsey AI Market Research Engine - Created by Shivam Tyagi.
         </p>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -44,17 +44,6 @@ export default function Footer() {
             <IoMdInformationCircleOutline />
             About
           </Link>
-
-          <a
-            href="https://github.com/furqansup/mckinsey-research-engine"
-            target="_blank"
-            rel="noreferrer"
-            className={`text-[13px] flex items-center gap-1 font-normal ${theme == "dark" ? "text-ink-soft/70" : "text-gray-700"} transition hover:text-ink`}
-          >
-
-            <FaGithub />
-            GitHub
-          </a>
         </div>
       </div>
     </motion.footer>

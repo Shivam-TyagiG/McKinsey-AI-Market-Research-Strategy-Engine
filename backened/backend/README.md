@@ -1,6 +1,6 @@
 BACKEND
 
-This folder contains the backend for the AI Market Research & Strategy Engine.
+This folder contains the backend for the McKinsey AI Market Research Engine.
 
 The backend is built using Python and FastAPI. It handles API requests, user authentication, research jobs, and communication between the frontend, database, and AI pipeline.
 

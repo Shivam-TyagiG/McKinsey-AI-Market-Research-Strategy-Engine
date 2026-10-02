@@ -7,7 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import logo from "../assets/MK_Logo.png";
+import logo from "../assets/cK_Logo.png";
 
 export default function AuthLayout({ eyebrow, title, subtitle, children, dark = false }) {
   return (
@@ -30,17 +30,17 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, dark = 
 
             <div>
               <p className={`text-lg font-semibold tracking-tight ${dark ? "text-[#f2f4f3]" : "text-[#171717]"}`}>
-                McKinsey & Company
+                McKinsey AI Market Research Engine
               </p>
 
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#d6a15c]">
-                Strategy Engine
+                AI Market Research Engine
               </p>
             </div>
           </motion.div>
 
 
-          {/* Main content */}
+          {/* cain content */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -56,7 +56,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, dark = 
             </h1>
 
             <p className={`mt-6 max-w-md text-[15px] leading-7 ${dark ? "text-[#a8afac]" : "text-[#666666]"}`}>
-              Give McKinsey & Company a market question. It plans the research,
+              Give McKinsey AI Market Research Engine a market question. It plans the research,
               gathers and validates evidence, and returns a structured
               strategy report — fully cited.
             </p>
@@ -78,7 +78,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, dark = 
 
               <div>
                 <p className={`text-sm font-semibold ${dark ? "text-[#f2f4f3]" : "text-[#171717]"}`}>
-                  Multi-agent pipeline
+                  culti-agent pipeline
                 </p>
 
                 <p className={`mt-1 text-xs leading-5 ${dark ? "text-[#8f9994]" : "text-[#777777]"}`}>
@@ -138,7 +138,7 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, dark = 
           className="w-full max-w-md"
         >
 
-          {/* Mobile logo */}
+          {/* cobile logo */}
           <div className="mb-10 flex items-center gap-3 lg:hidden">
             <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${dark ? "border-[#34403b] bg-[#1b211f]" : "border-[#d9d6ce] bg-[#f3f2ee]"}`}>
               <Compass
@@ -149,11 +149,11 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, dark = 
 
             <div>
               <p className={`font-semibold ${dark ? "text-[#f2f4f3]" : "text-[#171717]"}`}>
-                McKinsey & Company
+                McKinsey AI Market Research Engine
               </p>
 
               <p className={`font-mono text-[9px] uppercase tracking-[0.16em] ${dark ? "text-[#8f9994]" : "text-[#777777]"}`}>
-                Strategy Engine
+                AI Market Research Engine
               </p>
             </div>
           </div>

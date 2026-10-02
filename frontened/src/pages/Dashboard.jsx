@@ -86,11 +86,11 @@ export default function Dashboard() {
           <p className="font-mono text-[14px] uppercase tracking-[0.2em] text-gold">
             {firstName ? `Welcome back, ${firstName}` : "New engagement"}
           </p>
-          <h1 className="mt-3 max-w-2xl font-display text-4xl font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl">
-            What market question should McKinsey & Company investigate?
-          </h1>
+          <h2 className="mt-3 max-w-2xl font-display text-4xl font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl">
+            What market question should McKinsey AI Market Research Engine investigate?
+          </h2>
           <p className="mt-4 max-w-xl text-[15px] font-medium leading-relaxed text-ink-muted">
-            Describe a market, competitor set, or strategic question. McKinsey & Company
+            Describe a market, competitor set, or strategic question. McKinsey AI Market Research Engine
             plans the research, gathers evidence from the web, validates it,
             and returns a structured, cited report.
           </p>

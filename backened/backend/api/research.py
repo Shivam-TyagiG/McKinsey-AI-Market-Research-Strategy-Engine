@@ -18,10 +18,7 @@ from backend.repositories.report_repository import (ReportRepository)
 
 
 # Router
-router = APIRouter(
-    prefix="/api/research",
-    tags=["Research"],
-)
+router = APIRouter(prefix="/api/research",tags=["Research"])
 
 
 
@@ -71,9 +68,7 @@ research_service = ResearchService()
 
 
 @router.get("/")
-def list_research_jobs(
-    user=Depends(get_current_user),
-):
+def list_research_jobs(user=Depends(get_current_user)):
     jobs = research_job_repository.list_jobs(created_by=user.id)
 
     return {
@@ -95,7 +90,7 @@ def create_research(request: ResearchRequest,user=Depends(get_current_user)):
         )
 
     # Creating research job
-
+    
     try:
 
         job = research_job_repository.create_job(

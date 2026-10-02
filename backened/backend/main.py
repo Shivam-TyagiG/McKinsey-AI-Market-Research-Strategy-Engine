@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
-    description="AI Market Research & Strategy Engine",
+    description="McKinsey AI Market Research Engine",
 )
 
 

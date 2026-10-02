@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # App settings are loaded from the environment
 class Settings(BaseSettings):
-    app_name: str = "McKinsey AI Research Engine"
+    app_name: str = "McKinsey AI Market Research Engine"
     environment: str = "development"
     debug: bool = True
 

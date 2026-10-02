@@ -48,7 +48,7 @@ export default function AboutProject() {
           </p>
 
           <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-            McKinsey & Company Research Engine
+            McKinsey AI Market Research Engine Engine
           </h1>
 
           <p className="mt-5 text-base leading-relaxed text-ink-muted sm:text-lg">
@@ -77,7 +77,7 @@ export default function AboutProject() {
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-muted">
             Traditional market research can require significant time to
             collect information, compare sources, validate evidence, and
-            organize findings. McKinsey & Company explores how an agentic AI workflow
+            organize findings. McKinsey AI Market Research Engine explores how an agentic AI workflow
             can coordinate these activities and return a structured research
             output for human review.
           </p>
@@ -188,7 +188,7 @@ export default function AboutProject() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-muted">
-            McKinsey & Company is focused on exploring practical applications
+            McKinsey AI Market Research Engine is focused on exploring practical applications
             of generative AI, agent orchestration, automated research, and
             full-stack application development.
           </p>

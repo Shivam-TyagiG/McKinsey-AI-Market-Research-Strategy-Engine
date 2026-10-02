@@ -71,7 +71,7 @@ export default function Signup() {
     <AuthLayout
       eyebrow="Get started"
       title="Create your account"
-      subtitle="Set up access to run and revisit McKinsey & Company research engagements."
+      subtitle="Set up access to run and revisit McKinsey AI Market Research Engine research engagements."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
       <div>

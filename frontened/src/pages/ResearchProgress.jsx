@@ -382,7 +382,7 @@ export default function ResearchProgress() {
           >
             <motion.img
               src={logo}
-              alt="McKinsey & Company"
+              alt="McKinsey AI Market Research Engine"
               className="h-9 w-9 object-contain"
               animate={{
                 scale: [1, 1.04, 1],
@@ -433,7 +433,7 @@ export default function ResearchProgress() {
               text-gold
             "
           >
-            McKinsey & Company is working
+            McKinsey AI Market Research Engine is working
           </p>
 
           <h1
@@ -665,7 +665,7 @@ export default function ResearchProgress() {
             text-ink-muted
           "
         >
-          McKinsey & Company is coordinating multiple research stages.
+          McKinsey AI Market Research Engine is coordinating multiple research stages.
           You can leave this page open while the analysis runs.
         </motion.p>
 

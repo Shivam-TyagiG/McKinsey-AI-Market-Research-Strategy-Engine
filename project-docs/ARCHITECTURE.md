@@ -2,7 +2,7 @@
 
 ## Overview
 
-McKinsey & Company is an AI-powered market research and strategy engine designed to convert a research query into a structured, evidence-backed report.
+McKinsey AI Market Research Engine is an AI-powered market research and strategy engine designed to convert a research query into a structured, evidence-backed report.
 
 The system uses a multi-agent architecture where each agent performs a specific stage of the research workflow.
 
@@ -71,7 +71,7 @@ The system maintains information related to:
 
 ## AI and External Services
 
-McKinsey & Company integrates:
+McKinsey AI Market Research Engine integrates:
 
 * **Google Gemini** for AI-powered planning, extraction, validation, and report generation.
 * **Tavily** for web search and source discovery.

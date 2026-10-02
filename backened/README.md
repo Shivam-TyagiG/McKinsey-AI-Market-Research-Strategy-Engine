@@ -1,4 +1,7 @@
-# McKinsey & Company — AI Market Research & Strategy Engine
+# McKinsey AI Market Research Engine
+
+**Author:** Shivam Tyagi
+
 
 A full-stack, multi-agent market research application. A user submits a
 research brief; a planner → researcher → validator → report pipeline

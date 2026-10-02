@@ -25,18 +25,13 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
+            <Route path="/" element={
+              <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/new"
-              element={
+            <Route path="/new" element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
@@ -46,41 +41,30 @@ export default function App() {
             <Route path="/sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route
-              path="/research/new"
-              element={
+            <Route path="/research/new" element={
                 <ProtectedRoute>
                   <ResearchProgress />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/research/:jobId"
-              element={
+            <Route path="/research/:jobId" element={
                 <ProtectedRoute>
                   <ReportView />
                 </ProtectedRoute>
               }
             />
-
-            <Route
-              path="/about"
-              element={
+            <Route path="/about" element={
                 <ProtectedRoute>
                   <AboutProject />
                 </ProtectedRoute>
               }
             />
-
-            <Route
-              path="/methodology"
-              element={
+            <Route path="/methodology" element={
                 <ProtectedRoute>
                   <Methodology />
                 </ProtectedRoute>
               }
             />
-
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>

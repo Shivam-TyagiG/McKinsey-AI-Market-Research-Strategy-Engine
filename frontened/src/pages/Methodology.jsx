@@ -64,11 +64,11 @@ export default function Methodology() {
           </p>
 
           <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-            How McKinsey & Company conducts research
+            How McKinsey AI Market Research Engine conducts research
           </h1>
 
           <p className="mt-5 text-base leading-relaxed text-ink-muted sm:text-lg">
-            McKinsey & Company follows a structured multi-stage research workflow that
+            McKinsey AI Market Research Engine follows a structured multi-stage research workflow that
             transforms a strategic question into a validated and cited market
             research report.
           </p>
@@ -169,7 +169,7 @@ export default function Methodology() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-muted">
-            McKinsey & Company is designed to accelerate research rather than replace
+            McKinsey AI Market Research Engine is designed to accelerate research rather than replace
             strategic judgment. The generated findings, evidence, and
             recommendations are intended to give analysts and consultants a
             structured starting point for further review.
