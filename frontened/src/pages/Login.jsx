@@ -3,11 +3,16 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Compass, ArrowRight, AlertCircle, LockKeyhole } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
-
+// This page is responsible for handling user login. 
+// It provides a form for users to enter their email and password, and upon submission, 
+// it authenticates the user using the signIn function from the AuthContext. 
+// If authentication is successful, the user is redirected to their intended destination or the default dashboard. 
+// If there is an error during login, an error message is displayed.
 export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  // If their is a previous location stored in the state, we will redirect the user to that location after successful login.
   const from = location.state?.from?.pathname || "/";
 
   const [email, setEmail] = useState("");
@@ -16,7 +21,8 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Prevent the default form submission behavior, which would cause a page reload.
+    e.preventDefault(); 
     setError("");
     setSubmitting(true);
     try {

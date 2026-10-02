@@ -5,10 +5,10 @@ import {
   FileClock,
   FileText,
   LogOut,
-  cenu,
+  Menu,
+  Moon,
   Settings,
   Sun,
-  coon,
   X,
   Plus,
 } from "lucide-react";
@@ -19,7 +19,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 import Footer from "./Footer";
-import logo from "../assets/cK_Logo.png";
+import logo from "../assets/MK_Logo.png";
 
 const navigation = [
   { label: "Dashboard", to: "/", icon: BarChart3, end: true },
@@ -66,7 +66,7 @@ export default function Shell({ children }) {
             className="mr-3 flex h-9 w-9 items-center justify-center rounded-md border border-line text-ink-soft md:hidden"
             aria-label="Toggle navigation"
           >
-            {mobileNavOpen ? <X size={18} /> : <cenu size={18} />}
+            {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
           {/* Logo */}
           <motion.div
@@ -146,7 +146,7 @@ export default function Shell({ children }) {
                 transition={{ duration: 0.10 }}
               >
                 {theme === "light" ? (
-                  <coon size={17} />
+                  <Moon size={17} />
                 ) : (
                   <Sun size={17} />
                 )}

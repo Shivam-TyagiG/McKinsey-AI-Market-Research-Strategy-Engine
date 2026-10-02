@@ -29,10 +29,22 @@ function timeAgo(iso) {
   return `${days}d ago`;
 }
 
+const initialResearch = {
+  query: "",
+  target_market: "",
+  geography: "",
+  timeframe: "",
+  competitors: "",
+  deliverable_format: "Executive brief",
+  report_depth: "Standard",
+  source_preference: "Public sources and credible industry reports",
+  use_case: "Internal review",
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [research, setResearch] = useState(initialResearch);
   const [jobs, setJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState("");
@@ -51,16 +63,49 @@ export default function Dashboard() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    // This effect runs when the component mounts, 
+    // and it calls the loadJobs function to fetch the user's research jobs from the API.
     loadJobs();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!query.trim() || submitting) return;
+
+    if (submitting) return;
+
+    const trimmedQuery = research.query.trim();
+    const missingContext = [];
+
+    if (!trimmedQuery) {
+      missingContext.push("research question");
+    } else if (trimmedQuery.split(/\s+/).length < 8) {
+      missingContext.push("clearer research objective");
+    }
+
+    if (!research.target_market.trim()) missingContext.push("target market");
+    if (!research.geography.trim()) missingContext.push("geography");
+    if (!research.timeframe.trim()) missingContext.push("timeframe");
+
+    if (missingContext.length > 0 && submitting) return;
+
+    if (missingContext.length > 0) {
+      setError(
+        `Please add a clearer brief and complete the required scoping fields: ${missingContext.join(", ")}.`
+      );
+      return;
+    }
+
     setSubmitting(true);
     setError("");
-    // Progress screen owns the actual API call so we can show a live wait state.
-    navigate("/research/new", { state: { query: query.trim() } });
+
+    navigate("/research/new", {
+      state: {
+        research: {
+          ...research,
+          query: trimmedQuery,
+        },
+      },
+    });
   };
 
   const firstName = (user?.user_metadata?.full_name || "").split(" ")[0];
@@ -97,18 +142,120 @@ export default function Dashboard() {
 
           <form onSubmit={handleSubmit} className="mt-8">
             <div
-              className={` rounded-xl border border-[#8c8c8c]  p-2 shadow-[0_1px_2px_rgba(16,21,31,0.04)] transition focus-within:border-navy/30 focus-within:ring-1 focus-within:ring-na
+              className={` rounded-xl border border-[#8c8c8c] p-4 shadow-[0_1px_2px_rgba(16,21,31,0.04)] transition focus-within:border-navy/30 focus-within:ring-1 focus-within:ring-navy/10
               ${theme == "dark" ? "bg-[#4D4D4D]/45" : "bg-[#f3f2f2]/80"} `}
             >
+              <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                Research question
+              </label>
               <textarea
                 rows={3}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. Assess the competitive dynamics and growth outlook for enterprise observability tooling…"
-                className=" w-full resize-none rounded-lg bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted outline-none"
+                value={research.query}
+                onChange={(e) => setResearch((current) => ({ ...current, query: e.target.value }))}
+                placeholder="e.g. Assess the competitive dynamics and growth outlook for enterprise observability tooling in Europe over the next 12 months…"
+                className="mt-2 w-full resize-none rounded-lg bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink placeholder:text-ink-muted outline-none"
               />
 
-              <div className="flex items-center justify-between px-3 pb-2 pt-1">
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Target market
+                  <input
+                    value={research.target_market}
+                    onChange={(e) => setResearch((current) => ({ ...current, target_market: e.target.value }))}
+                    placeholder="Enterprise software, fintech, healthtech…"
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-navy/40"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Geography
+                  <input
+                    value={research.geography}
+                    onChange={(e) => setResearch((current) => ({ ...current, geography: e.target.value }))}
+                    placeholder="United States, EMEA, APAC…"
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-navy/40"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Timeframe
+                  <input
+                    value={research.timeframe}
+                    onChange={(e) => setResearch((current) => ({ ...current, timeframe: e.target.value }))}
+                    placeholder="Last 12 months, next 2 years…"
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-navy/40"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Competitors / peer set
+                  <input
+                    value={research.competitors}
+                    onChange={(e) => setResearch((current) => ({ ...current, competitors: e.target.value }))}
+                    placeholder="Company A, Company B, adjacent players…"
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-navy/40"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Deliverable format
+                  <select
+                    value={research.deliverable_format}
+                    onChange={(e) => setResearch((current) => ({ ...current, deliverable_format: e.target.value }))}
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink outline-none focus:border-navy/40"
+                  >
+                    <option>Executive brief</option>
+                    <option>Board-ready memo</option>
+                    <option>Client proposal draft</option>
+                    <option>Workshop brief</option>
+                  </select>
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Report depth
+                  <select
+                    value={research.report_depth}
+                    onChange={(e) => setResearch((current) => ({ ...current, report_depth: e.target.value }))}
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink outline-none focus:border-navy/40"
+                  >
+                    <option>Standard</option>
+                    <option>Deep dive</option>
+                    <option>Fast scan</option>
+                  </select>
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted md:col-span-2">
+                  Source preference
+                  <input
+                    value={research.source_preference}
+                    onChange={(e) => setResearch((current) => ({ ...current, source_preference: e.target.value }))}
+                    placeholder="Public sources, analyst research, filings, news, or mixed"
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted outline-none focus:border-navy/40"
+                  />
+                </label>
+
+                <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted md:col-span-2">
+                  Intended output use
+                  <select
+                    value={research.use_case}
+                    onChange={(e) => setResearch((current) => ({ ...current, use_case: e.target.value }))}
+                    className="mt-2 w-full rounded-md border border-line bg-white/80 px-3 py-2.5 text-sm text-ink outline-none focus:border-navy/40"
+                  >
+                    <option>Internal review</option>
+                    <option>Proposal support</option>
+                    <option>Workshop preparation</option>
+                    <option>Client-facing review</option>
+                  </select>
+                </label>
+              </div>
+
+              {error && (
+                <div className="mt-4 flex items-center gap-2 rounded-md border border-bad/25 bg-bad/5 px-3 py-2 text-sm text-bad">
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <div className="mt-5 flex items-center justify-between px-1 pb-1 pt-1">
                 <div className="flex items-center gap-1.5 text-xs text-ink-muted">
                   <Sparkles size={13} className="text-gold" />
                   Planner &middot; Researcher &middot; Validator &middot; Report
@@ -116,11 +263,11 @@ export default function Dashboard() {
 
                 <motion.button
                   type="submit"
-                  disabled={!query.trim() || submitting}
+                  disabled={submitting}
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className=" group flex cursor-pointer items-center gap-2 rounded-lg bg-navy/70 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy disabled:cursor-not-allowed disabled:opacity-40"
+                  className="group flex cursor-pointer items-center gap-2 rounded-lg bg-navy/70 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <span className="hidden md:block">
                     Run research
@@ -153,7 +300,7 @@ export default function Dashboard() {
               <motion.button
                 key={p}
                 type="button"
-                onClick={() => setQuery(p)}
+                onClick={() => setResearch((current) => ({ ...current, query: p }))}
                 className={`rounded-full border border-line px-3.5 py-1.5 text-sm  cursor-pointer ${theme == "dark" ? "bg-gray-800/80 text-slate-200" : " bg-white text-ink"}`}
 
                 initial={{ opacity: 0, x: -8 }}

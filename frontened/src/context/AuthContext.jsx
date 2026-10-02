@@ -42,6 +42,7 @@ export function AuthProvider({ children }) {
   };
 
   const signIn = async (email, password) => {
+    // In data we have the session and user information after successful sign-in.
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;

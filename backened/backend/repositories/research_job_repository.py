@@ -32,7 +32,8 @@ class ResearchJobRepository:
             .order("created_at", desc=True)
             .limit(limit)
         )
-
+# query.eq mens we are added a filter to the query to only return jobs that were created by the specified user.
+# If created_by is None, then we will return all jobs.
         if created_by:
             query = query.eq("created_by", created_by)
 

@@ -19,8 +19,14 @@ import { ThemeProvider } from "./context/ThemeContext";
 
 export default function App() {
   return (
+    // This is JavaScript
+    // Route decides which component/page to show. 
+    // BrowserRouter provides the routing environment that makes this possible.
     <BrowserRouter>
+    {/* This is a JSX comment */}
+    {/* ThemeProvider = a context provider that manages the application's theme (light/dark mode) and provides theme-related state and functions to its child components. */}
       <ThemeProvider>
+        {/* AuthProvider = a context provider that manages user authentication state and provides authentication-related functions to its child components. */}
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />

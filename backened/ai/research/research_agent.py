@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import urlparse # this is use to break the url into components
 
 from ai.browser.tavily_search import TavilySearchEngine
 from ai.schemas.research_task import ResearchTask

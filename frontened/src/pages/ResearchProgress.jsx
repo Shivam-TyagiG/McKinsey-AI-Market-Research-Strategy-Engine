@@ -64,11 +64,20 @@ const PARTICLE_ICONS = [
 ];
 
 export default function ResearchProgress() {
+  // useLocation = a hook from react-router-dom that provides access to the current location object,
+  //  which contains information about the current URL and state passed through navigation.
   const location = useLocation();
+  // useNavigate = a hook from react-router-dom that provides a function to programmatically navigate to different routes
+  // within the application.
   const navigate = useNavigate();
 
-  const query = location.state?.query;
+  const researchRequest = location.state?.research || {
+    query: location.state?.query || "",
+  };
+  const query = (researchRequest.query || "").trim();
 
+  // useState = a React hook that allows you to add state to functional components. 
+  // It returns an array with two elements: the current state value and a function to update that state.
   const [stageIndex, setStageIndex] = useState(0);
   const [activityIndex, setActivityIndex] = useState(0);
 
@@ -99,8 +108,7 @@ export default function ResearchProgress() {
       );
     }, STAGE_DURATION_MS);
 
-    api
-      .createResearch(query)
+    api.createResearch(researchRequest)
       .then((result) => {
         clearInterval(timer);
 
@@ -134,8 +142,7 @@ export default function ResearchProgress() {
 
     return () => clearInterval(timer);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [navigate, query, researchRequest]);
 
   /*
   |--------------------------------------------------------------------------

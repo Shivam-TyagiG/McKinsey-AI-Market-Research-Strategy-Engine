@@ -4,7 +4,10 @@ import { useNavigate } from "react-router-dom";
 import Shell from "../components/Shell";
 import StatusBadge from "../components/StatusBadge";
 import { ApiError, api } from "../api/client";
-
+// This page is responsible for displaying the research history of the user.
+// It fetches the list of research jobs from the API and displays them in a table format. 
+// The user can search for specific research briefs using the search input. Each job displays its brief, status, and creation date. 
+// The user can click on a job to navigate to its detailed report view.
 function formatDate(value) {
   return value ? new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "-";
 }

@@ -16,6 +16,8 @@ export default function Signup() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const handleSubmit = async (e) => {
+    // Prevent the default form submission behavior, 
+    // which would cause a page reload.
     e.preventDefault();
     setError("");
 
@@ -25,14 +27,14 @@ export default function Signup() {
     }
 
     setSubmitting(true);
-    try {
-      const data = await signUp(email, password, fullName);
-      if (data.session) {
-        navigate("/", { replace: true });
-      } else {
-        // Email confirmation required by the Supabase project settings.
-        setNeedsConfirmation(true);
-      }
+      try {
+        const data = await signUp(email, password, fullName);
+        if (data.session) {
+          navigate("/", { replace: true });
+        } else {
+          // Email confirmation required by the Supabase project settings.
+          setNeedsConfirmation(true);
+        }
     } catch (err) {
       setError(err.message || "Unable to create your account.");
     } finally {

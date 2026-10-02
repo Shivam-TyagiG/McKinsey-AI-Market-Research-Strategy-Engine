@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { Check, coon, Save, Sun } from "lucide-react";
+import { Check, Moon, Save, Sun } from "lucide-react";
 import Shell from "../components/Shell";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-
+// here we define the Settings page component, which allows users to manage their profile and appearance preferences. 
+// It uses the useAuth hook to access the current user's information and the useTheme hook to manage the theme settings. 
+// The component maintains local state for the user's name and a saved status to provide feedback when changes are saved. 
+// The saveProfile function handles form submission, preventing default behavior and updating the saved state. 
+// The component renders a form for updating the user's full name and displays the user's email address, along with a section for toggling between light and dark themes.
 export default function Settings() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();

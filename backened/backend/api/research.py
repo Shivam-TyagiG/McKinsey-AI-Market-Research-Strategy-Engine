@@ -25,6 +25,14 @@ router = APIRouter(prefix="/api/research",tags=["Research"])
 
 class ResearchRequest(BaseModel):
     query: str
+    target_market: str | None = None
+    geography: str | None = None
+    timeframe: str | None = None
+    competitors: str | None = None
+    deliverable_format: str = "Executive brief"
+    report_depth: str = "Standard"
+    source_preference: str = "Public sources and credible industry reports"
+    use_case: str = "Internal review"
 
 
 class ResearchResponse(BaseModel):
@@ -46,7 +54,54 @@ def _ensure_owner(job: dict, user) -> None:
         )
 
 
+def _build_research_brief(payload: ResearchRequest) -> str:
+    """Formats the user request and scoping context into a single research brief."""
 
+    query = (payload.query or "").strip()
+    target_market = (payload.target_market or "").strip()
+    geography = (payload.geography or "").strip()
+    timeframe = (payload.timeframe or "").strip()
+    competitors = (payload.competitors or "").strip()
+    deliverable_format = (payload.deliverable_format or "Executive brief").strip()
+    report_depth = (payload.report_depth or "Standard").strip()
+    source_preference = (
+        payload.source_preference or "Public sources and credible industry reports"
+    ).strip()
+    use_case = (payload.use_case or "Internal review").strip()
+
+    if not query:
+        raise ValueError("Research question cannot be empty.")
+
+    if len(query.split()) < 8:
+        raise ValueError(
+            "Research question is too vague. Please provide a clearer objective with enough context."
+        )
+
+    if not target_market or not geography or not timeframe:
+        raise ValueError(
+            "Please provide the target market, geography, and timeframe before starting the research job."
+        )
+
+    parts = [
+        query,
+        f"Target market: {target_market}",
+        f"Geography: {geography}",
+        f"Timeframe: {timeframe}",
+    ]
+
+    if competitors:
+        parts.append(f"Competitors / peer set: {competitors}")
+
+    parts.extend(
+        [
+            f"Deliverable format: {deliverable_format}",
+            f"Report depth: {report_depth}",
+            f"Source preference: {source_preference}",
+            f"Intended output use: {use_case}",
+        ]
+    )
+
+    return "\n".join(parts)
 
 
 research_job_repository = ResearchJobRepository()
@@ -79,22 +134,11 @@ def list_research_jobs(user=Depends(get_current_user)):
 
 @router.post("/",response_model=ResearchResponse)
 def create_research(request: ResearchRequest,user=Depends(get_current_user)):
-
-    # Validating query
-
-    if not request.query or not request.query.strip():
-
-        raise HTTPException(
-            status_code=400,
-            detail="Research query cannot be empty.",
-        )
-
-    # Creating research job
-    
     try:
+        research_brief = _build_research_brief(request)
 
         job = research_job_repository.create_job(
-            request.query.strip(),
+            research_brief,
             created_by=user.id,
         )
 
@@ -108,7 +152,10 @@ def create_research(request: ResearchRequest,user=Depends(get_current_user)):
 
         # Runing AI pipeline
 
-        result = research_service.run_research(query=request.query.strip(),job_id=job_id,)
+        result = research_service.run_research(
+            query=research_brief,
+            job_id=job_id,
+        )
 
         # Marking job completed
 

@@ -25,6 +25,9 @@ async function request(path, options = {}) {
     ...(options.headers || {}),
   };
 
+  // ...options is the JavaScript spread operator. 
+  // In our code, it is used to pass whatever request options were provided to request() into fetch().
+  // This allows us to customize the request (e.g., method, body) while still including our default headers.
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
@@ -51,10 +54,10 @@ async function request(path, options = {}) {
 
 export const api = {
   listResearch: () => request("/api/research/"),
-  createResearch: (query) =>
+  createResearch: (researchRequest) =>
     request("/api/research/", {
       method: "POST",
-      body: JSON.stringify({ query }),
+      body: JSON.stringify(researchRequest),
     }),
   getJob: (jobId) => request(`/api/research/${jobId}`),
   getTasks: (jobId) => request(`/api/research/${jobId}/tasks`),

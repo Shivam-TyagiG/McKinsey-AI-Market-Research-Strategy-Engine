@@ -53,11 +53,12 @@ class GeminiLLM(LLM):
         # Model Configuration (Best → Weakest)
         # -------------------------------------------------------
 
-        self.primary_model = "gemini-3.1-flash-lite"
+        self.primary_model = "gemini-3.6-flash-lite"
 
         self.fallback_models = [
-            "gemini-3.5-flashh",
+            "gemini-3.5-flash",
             "gemini-2.5-flash-lite",
+            "gemini-3.1-flash-lite",
         ]
 
         logger.info(
@@ -107,7 +108,11 @@ class GeminiLLM(LLM):
 
                 last_error = e
                 error_text = str(e)
-
+# we are checking if the error is retryable based on common HTTP status codes and error messages that indicate temporary issues.
+# If the error is not retryable, we log it and raise the exception. 
+# If it is retryable, we check for a specific retry time in the error message (for 429 errors) or 
+# use an exponential backoff strategy for other errors. We then wait for the specified time before retrying, up to the maximum number of retries.
+# If all attempts fail, we log an error message indicating that the model failed after all attempts.
                 retryable = any(
                     keyword in error_text
                     for keyword in (
@@ -123,7 +128,7 @@ class GeminiLLM(LLM):
                 if not retryable:
                     logger.error("Non-retryable Gemini error (%s): %s", model, e)
                     raise
-
+#here we are handling retryable errors by checking for specific error messages and implementing a backoff strategy.
                 # Read Gemini RetryInfo (429 errors)
                 retry_match = re.search(
                     r"retry in ([0-9.]+)s",

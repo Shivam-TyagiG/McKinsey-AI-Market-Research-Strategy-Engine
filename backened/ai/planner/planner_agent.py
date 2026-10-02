@@ -40,14 +40,14 @@ The JSON must be an array in this exact format:
 Do not include markdown.
 Do not include explanations outside the JSON.
 """
-
+#here we call the LLM to generate the plan based on the prompt
         response = self.llm.generate(prompt).strip()
-
+#here we clean up the response to ensure it is valid JSON and parse it into ResearchTask objects
         if response.startswith("```"):
             response = response.replace("```json", "")
             response = response.replace("```", "")
             response = response.strip()
-
+#here we attempt to parse the response as JSON and validate it against the ResearchTask schema
         try:
             data = json.loads(response)
         except json.JSONDecodeError as e:
@@ -55,7 +55,7 @@ Do not include explanations outside the JSON.
 
         if not isinstance(data, list):
             raise ValueError("Planner response must be a JSON list")
-
+#here we validate each task in the list to ensure it conforms to the ResearchTask schema
         try:
             return [
                 ResearchTask.model_validate(task)
