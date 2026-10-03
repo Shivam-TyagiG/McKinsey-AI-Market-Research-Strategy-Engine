@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ListChecks,
@@ -71,9 +71,10 @@ export default function ResearchProgress() {
   // within the application.
   const navigate = useNavigate();
 
-  const researchRequest = location.state?.research || {
-    query: location.state?.query || "",
-  };
+  const researchRequest = useMemo(
+    () => location.state?.research || { query: location.state?.query || "" },
+    [location.state?.research, location.state?.query]
+  );
   const query = (researchRequest.query || "").trim();
 
   // useState = a React hook that allows you to add state to functional components. 

@@ -102,6 +102,7 @@ class PipelineResilienceTests(unittest.TestCase):
         self.assertEqual(result.validations, [])
         self.assertTrue(any("not independently validated" in warning for warning in result.warnings))
         self.assertTrue(any("evidence-only fallback" in warning for warning in result.warnings))
+        self.assertTrue(any("temporary extraction failure" in warning for warning in result.warnings))
 
     def test_planner_failure_uses_original_brief(self):
         researcher = FakeResearcher()

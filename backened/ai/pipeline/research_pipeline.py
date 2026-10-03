@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from urllib.parse import urlsplit, urlunsplit
 
@@ -64,6 +65,17 @@ class ResearchPipeline:
             parsed.query,
             "",
         ))
+
+    @staticmethod
+    def _failure_summary(error: Exception) -> str:
+        detail = " ".join(str(error).split())
+        detail = re.sub(
+            r"(?i)(api[_-]?key|access[_-]?token|authorization)(\s*[:=]\s*)\S+",
+            r"\1\2[redacted]",
+            detail,
+        )
+        detail = detail[:180] or "no provider detail returned"
+        return f"{type(error).__name__}: {detail}"
 
     @staticmethod
     def _fallback_task(query: str) -> ResearchTask:
@@ -259,7 +271,10 @@ class ResearchPipeline:
                         len(sources_to_extract),
                         error,
                     )
-                    warnings.append(f"Evidence extraction failed for source: {source.title}")
+                    warnings.append(
+                        f"Evidence extraction failed for source: {source.title} "
+                        f"({self._failure_summary(error)})"
+                    )
                     continue
 
                 if not source_evidence:
