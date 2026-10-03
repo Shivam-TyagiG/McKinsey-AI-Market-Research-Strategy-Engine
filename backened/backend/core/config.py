@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     supabase_url: str = Field(...)
     supabase_key: str = Field(...)
 
-    ccors_origins: str = (
+    cors_origins: str = (
         "http://localhost:5173,"
         "http://127.0.0.1:5173,"
         "http://localhost:5174,"
