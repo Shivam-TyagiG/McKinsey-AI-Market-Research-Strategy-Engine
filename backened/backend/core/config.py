@@ -13,10 +13,12 @@ class Settings(BaseSettings):
     supabase_url: str = Field(...)
     supabase_key: str = Field(...)
 
-    cors_origins: str = (
-        "http://localhost:5173,http://127.0.0.1:5173,"
-        "http://localhost:5174,http://127.0.0.1:5174",
-        "https://mc-kinsey-ai-market-research-strate.vercel.app",
+    ccors_origins: str = (
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173,"
+        "http://localhost:5174,"
+        "http://127.0.0.1:5174,"
+        "https://mc-kinsey-ai-market-research-strate.vercel.app"
     )
 
     model_config = SettingsConfigDict(
