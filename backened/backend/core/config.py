@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         "http://localhost:5174,"
         "http://127.0.0.1:5174,"
         "https://mc-kinsey-ai-market-research-strate.vercel.app"
+        "mc-kinsey-ai-market-research-strate.vercel.app"
         "https://mc-kinsey-ai-market-research-strategy-engine-dtuna17ht.vercel.app"
     )
 
