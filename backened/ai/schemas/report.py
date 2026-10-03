@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ai.schemas.citation import Citation
 from ai.schemas.report_item import ReportItem
@@ -13,4 +13,5 @@ class Report(BaseModel):
     implications: list[ReportItem]
     recommendations: list[ReportItem]
     evidence_appendix: list[str]
-    citations: list[Citation] = []
+    citations: list[Citation] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)

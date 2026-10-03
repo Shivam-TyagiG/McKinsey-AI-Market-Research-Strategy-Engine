@@ -5,8 +5,8 @@ from ai.schemas.research_task import ResearchTask
 
 
 class PlannerAgent:
-    def __init__(self):
-        self.llm = GeminiLLM()
+    def __init__(self, llm=None):
+        self.llm = llm or GeminiLLM()
 
     def create_plan(self, query: str) -> list[ResearchTask]:
         prompt = f"""

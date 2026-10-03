@@ -32,7 +32,7 @@ const navigation = [
 export default function Shell({ children }) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [mobileNavOpen, setcobileNavOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -62,7 +62,7 @@ export default function Shell({ children }) {
         <div className="flex items-center justify-between px-5 py-4 md:px-7">
           <button
             type="button"
-            onClick={() => setcobileNavOpen((open) => !open)}
+            onClick={() => setMobileNavOpen((open) => !open)}
             className="mr-3 flex h-9 w-9 items-center justify-center rounded-md border border-line text-ink-soft md:hidden"
             aria-label="Toggle navigation"
           >
@@ -215,7 +215,7 @@ export default function Shell({ children }) {
                   key={to}
                   to={to}
                   end={end}
-                  onClick={() => setcobileNavOpen(false)}
+                  onClick={() => setMobileNavOpen(false)}
                   className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-navy text-white shadow-sm" : "text-ink-soft hover:bg-paper-dim hover:text-ink"}`}
                 >
                   <Icon size={17} strokeWidth={1.8} />
@@ -226,7 +226,7 @@ export default function Shell({ children }) {
             <div className="mt-auto border-t border-line pt-4">
               <NavLink
                 to="/settings"
-                onClick={() => setcobileNavOpen(false)}
+                onClick={() => setMobileNavOpen(false)}
                 className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-navy text-white" : "text-ink-soft hover:bg-paper-dim hover:text-ink"}`}
               >
                 <Settings size={17} strokeWidth={1.8} />
@@ -239,7 +239,7 @@ export default function Shell({ children }) {
             </div>
           </div>
         </aside>
-        {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setcobileNavOpen(false)} className="fixed inset-0 top-[73px] z-20 bg-black/20 md:hidden" />}
+        {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 top-[73px] z-20 bg-black/20 md:hidden" />}
         <motion.main
           className="min-w-0 flex-1"
         initial={{ opacity: 0, y: 12 }}

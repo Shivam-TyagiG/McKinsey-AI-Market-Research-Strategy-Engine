@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 
 from ai.browser.tavily_search import TavilySearchEngine
 from ai.llm.gemini import GeminiLLM
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Limit content sent to Gemini to reduce token usage
 MAX_CONTENT_LENGTH = 4000
+MIN_SEARCH_CONTENT_LENGTH = 300
 
 
 class ExtractionAgent:
@@ -24,14 +26,22 @@ class ExtractionAgent:
 
     def extract(self, source: Source) -> list[Evidence]:
 
-        extracted = self.browser.extract([source.url])
+        content = (source.content or "").strip()
 
-        if not extracted:
-            return []
-
-        content = extracted[0].get("raw_content", "")
+        if len(content) < MIN_SEARCH_CONTENT_LENGTH:
+            try:
+                extracted = self.browser.extract([source.url])
+                if extracted:
+                    content = (extracted[0].get("raw_content") or "").strip()
+            except Exception as error:
+                logger.warning(
+                    "Source extraction failed for %s; using search snippet if available: %s",
+                    source.source_id,
+                    error,
+                )
 
         if not content:
+            logger.warning("No extractable content for source %s.", source.source_id)
             return []
 
         # Reduce token usage
@@ -85,13 +95,22 @@ Rules:
 
         try:
             data = json.loads(cleaned_response)
-        except json.JSONDecodeError as e:
-            logger.error("Invalid Gemini JSON response.")
-            logger.error(cleaned_response)
-            raise ValueError("Extraction agent returned invalid JSON.") from e
+        except json.JSONDecodeError:
+            logger.warning(
+                "Extraction returned invalid JSON for source %s; skipping source.",
+                source.source_id,
+            )
+            return []
+
+        if isinstance(data, dict):
+            data = data.get("evidence", data.get("items", []))
 
         if not isinstance(data, list):
-            raise ValueError("Extraction agent expected a JSON array.")
+            logger.warning(
+                "Extraction returned an unexpected response shape for source %s.",
+                source.source_id,
+            )
+            return []
 
         evidences = []
 
@@ -108,30 +127,54 @@ Rules:
             if not isinstance(item, dict):
                 continue
 
-            if any(field not in item for field in required_fields):
+            if any(
+                field not in item or not isinstance(item[field], str)
+                for field in required_fields[:-1]
+            ) or "relevance_score" not in item:
                 continue
 
             try:
                 score = float(item["relevance_score"])
-            except Exception:
+            except (TypeError, ValueError):
+                continue
+
+            if not math.isfinite(score):
                 continue
 
             score = max(0.0, min(score, 1.0))
 
-            evidences.append(
-                Evidence(
-                    evidence_id=f"{source.source_id}_evidence_{index:03d}",
-                    claim=item["claim"].strip(),
-                    excerpt=item["excerpt"].strip(),
-                    entity=item["entity"].strip(),
-                    topic=item["topic"].strip(),
-                    relevance_score=score,
-                    source_id=source.source_id,
+            claim = item["claim"].strip()
+            excerpt = item["excerpt"].strip()
+            entity = item["entity"].strip()
+            topic = item["topic"].strip()
+            if not claim or not excerpt or not entity or not topic:
+                continue
+
+            try:
+                evidences.append(
+                    Evidence(
+                        evidence_id=f"{source.source_id}_evidence_{index:03d}",
+                        claim=claim,
+                        excerpt=excerpt,
+                        entity=entity,
+                        topic=topic,
+                        relevance_score=score,
+                        source_id=source.source_id,
+                    )
                 )
-            )
+            except (TypeError, ValueError):
+                logger.warning(
+                    "Skipping invalid evidence item %d from source %s.",
+                    index,
+                    source.source_id,
+                )
 
         if not evidences:
-            raise ValueError("Extraction agent returned no valid evidence.")
+            logger.warning(
+                "Extraction returned no valid evidence for source %s; skipping source.",
+                source.source_id,
+            )
+            return []
 
         logger.info(
             "Extraction completed: %d evidence items from source %s.",
@@ -161,10 +204,15 @@ Rules:
 
             cleaned = "\n".join(lines).strip()
 
-        start = cleaned.find("[")
-        end = cleaned.rfind("]")
-
-        if start != -1 and end != -1:
-            cleaned = cleaned[start:end + 1]
+        start = min(
+            (index for index in (cleaned.find("["), cleaned.find("{")) if index >= 0),
+            default=-1,
+        )
+        if start >= 0:
+            try:
+                _, end = json.JSONDecoder().raw_decode(cleaned[start:])
+                cleaned = cleaned[start:start + end]
+            except json.JSONDecodeError:
+                pass
 
         return cleaned

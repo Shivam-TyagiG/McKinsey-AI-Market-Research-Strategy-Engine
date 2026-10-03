@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ai.schemas.report import Report
 from ai.schemas.linked_report import LinkedReport
@@ -15,3 +15,4 @@ class ResearchResult(BaseModel):
     sources: list[Source]
     evidences: list[Evidence]
     validations: list[ValidationResult]
+    warnings: list[str] = Field(default_factory=list)

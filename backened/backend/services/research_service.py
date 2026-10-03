@@ -78,26 +78,6 @@ class ResearchService:
         try:
             result = self.pipeline.run(query)
 
-        # Gemini unavailable after retries
-        except RuntimeError as e:
-
-            elapsed = time.time() - start_time
-
-            logger.error(
-                "Research job %s failed after %.2fs.",
-                job_id,
-                elapsed,
-            )
-
-            logger.error("Gemini is temporarily unavailable.")
-            logger.error(str(e))
-
-            # Return a clean error to the API layer.
-            raise RuntimeError(
-                "Gemini is temporarily unavailable after multiple retries. Please retry in a few minutes."
-            ) from e
-
-        # Any unexpected pipeline failure
         except Exception as e:
 
             elapsed = time.time() - start_time

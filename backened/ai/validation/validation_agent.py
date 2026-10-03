@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 
 from ai.llm.gemini import GeminiLLM
 from ai.schemas.evidence import Evidence
@@ -54,8 +55,16 @@ class ValidationAgent:
                 len(evidences),
             )
 
-            batch_results = self._validate_batch(batch, source_map)
-            results.extend(batch_results)
+            try:
+                batch_results = self._validate_batch(batch, source_map)
+                results.extend(batch_results)
+            except Exception as error:
+                logger.warning(
+                    "Skipping failed validation batch %d-%d: %s",
+                    start + 1,
+                    start + len(batch),
+                    error,
+                )
 
         logger.info(
             "Validation completed: %d validation results.",
@@ -134,20 +143,17 @@ Rules:
         try:
             data = json.loads(cleaned_response)
 
-        except json.JSONDecodeError as e:
-            logger.error("Gemini returned invalid validation JSON.")
-            logger.error(cleaned_response)
-
-            raise ValueError(
-                "Validation agent returned invalid JSON."
-            ) from e
+        except json.JSONDecodeError:
+            logger.warning("Gemini returned invalid validation JSON; skipping batch.")
+            return []
 
         if not isinstance(data, list):
-            raise ValueError(
-                "Validation agent expected a JSON array."
-            )
+            logger.warning("Validation response was not a JSON array; skipping batch.")
+            return []
 
         results = []
+        batch_evidence_ids = {evidence.evidence_id for evidence in evidences}
+        seen_evidence_ids = set()
 
         for item in data:
 
@@ -171,36 +177,49 @@ Rules:
                 )
                 continue
 
-            try:
-                credibility = max(
-                    0.0,
-                    min(float(item["credibility_score"]), 1.0),
-                )
-
-                recency = max(
-                    0.0,
-                    min(float(item["recency_score"]), 1.0),
-                )
-
-            except Exception:
+            evidence_id = item["evidence_id"]
+            if (
+                not isinstance(evidence_id, str)
+                or evidence_id not in batch_evidence_ids
+                or evidence_id in seen_evidence_ids
+                or not isinstance(item["is_valid"], bool)
+                or not isinstance(item["is_duplicate"], bool)
+                or not isinstance(item["has_conflict"], bool)
+                or not isinstance(item["reason"], str)
+            ):
+                logger.warning("Skipping validation item with invalid fields or evidence id.")
                 continue
+
+            try:
+                if isinstance(item["credibility_score"], bool) or isinstance(item["recency_score"], bool):
+                    continue
+                raw_credibility = float(item["credibility_score"])
+                raw_recency = float(item["recency_score"])
+
+            except (TypeError, ValueError):
+                continue
+
+            if not math.isfinite(raw_credibility) or not math.isfinite(raw_recency):
+                continue
+
+            credibility = max(0.0, min(raw_credibility, 1.0))
+            recency = max(0.0, min(raw_recency, 1.0))
 
             results.append(
                 ValidationResult(
-                    evidence_id=str(item["evidence_id"]).strip(),
-                    is_valid=bool(item["is_valid"]),
+                    evidence_id=evidence_id,
+                    is_valid=item["is_valid"],
                     credibility_score=credibility,
                     recency_score=recency,
-                    is_duplicate=bool(item["is_duplicate"]),
-                    has_conflict=bool(item["has_conflict"]),
-                    reason=str(item["reason"]).strip()[:120],
+                    is_duplicate=item["is_duplicate"],
+                    has_conflict=item["has_conflict"],
+                    reason=item["reason"].strip()[:120],
                 )
             )
+            seen_evidence_ids.add(evidence_id)
 
         if not results:
-            raise ValueError(
-                "Validation agent returned no valid validation results."
-            )
+            logger.warning("Validation batch contained no valid results.")
 
         return results
 

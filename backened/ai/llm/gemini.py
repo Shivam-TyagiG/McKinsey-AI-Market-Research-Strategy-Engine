@@ -1,5 +1,4 @@
 import os
-import re
 import time
 import logging
 
@@ -7,6 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 
 from ai.llm.base import LLM
+from ai.reliability import get_status_code, is_retryable_error, retry_delay
 
 # =======================================================
 # Load Environment Variables
@@ -16,17 +16,11 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-api_key = os.getenv("GOOGLE_API_KEY")
-
-if not api_key:
-    raise ValueError("GOOGLE_API_KEY is not set in the environment.")
-
 # =======================================================
 # Retry Configuration
 # =======================================================
 
-MAX_MODEL_RETRIES = 3
-DEFAULT_BACKOFF = 2  # Seconds
+MAX_MODEL_ATTEMPTS = 2
 
 # =======================================================
 # Gemini LLM Wrapper
@@ -46,19 +40,32 @@ class GeminiLLM(LLM):
     - Handles 503 unavailable errors with exponential backoff.
     """
 
-    def __init__(self):
-        self.client = genai.Client(api_key=api_key)
+    def __init__(
+        self,
+        client=None,
+        api_key: str | None = None,
+        primary_model: str | None = None,
+        fallback_models: list[str] | None = None,
+        sleep=time.sleep,
+    ):
+        api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        self.client = client or (genai.Client(api_key=api_key) if api_key else None)
+        self.sleep = sleep
 
         # -------------------------------------------------------
         # Model Configuration (Best → Weakest)
         # -------------------------------------------------------
 
-        self.primary_model = "gemini-3.6-flash-lite"
-
-        self.fallback_models = [
-            "gemini-3.5-flash",
-            "gemini-2.5-flash-lite",
-            "gemini-3.1-flash-lite",
+        self.primary_model = primary_model or os.getenv(
+            "GEMINI_MODEL", "gemini-3.5-flash"
+        )
+        configured_fallbacks = os.getenv(
+            "GEMINI_FALLBACK_MODELS", "gemini-2.5-flash,gemini-2.5-flash-lite"
+        )
+        self.fallback_models = fallback_models or [
+            model.strip()
+            for model in configured_fallbacks.split(",")
+            if model.strip() and model.strip() != self.primary_model
         ]
 
         logger.info(
@@ -74,6 +81,9 @@ class GeminiLLM(LLM):
     def _chat_generate(self, model: str, prompt: str) -> str:
         """Send prompt using Gemini Chat API."""
 
+        if self.client is None:
+            raise RuntimeError("GOOGLE_API_KEY is not configured.")
+
         chat = self.client.chats.create(model=model)
 
         response = chat.send_message(prompt)
@@ -88,76 +98,44 @@ class GeminiLLM(LLM):
     # =======================================================
 
     def _generate_with_retry(self, model: str, prompt: str) -> str:
-        """Retry Gemini request on temporary failures."""
-
         last_error = None
 
-        for attempt in range(1, MAX_MODEL_RETRIES + 1):
-
+        for attempt in range(1, MAX_MODEL_ATTEMPTS + 1):
             try:
                 logger.info(
                     "Using Gemini model: %s (Attempt %d/%d)",
                     model,
                     attempt,
-                    MAX_MODEL_RETRIES,
+                    MAX_MODEL_ATTEMPTS,
                 )
-
                 return self._chat_generate(model=model, prompt=prompt)
+            except Exception as error:
+                last_error = error
+                status_code = get_status_code(error)
 
-            except Exception as e:
+                if status_code in {400, 401, 403}:
+                    raise RuntimeError(
+                        "Gemini rejected the request; check API access and request configuration."
+                    ) from error
 
-                last_error = e
-                error_text = str(e)
-# we are checking if the error is retryable based on common HTTP status codes and error messages that indicate temporary issues.
-# If the error is not retryable, we log it and raise the exception. 
-# If it is retryable, we check for a specific retry time in the error message (for 429 errors) or 
-# use an exponential backoff strategy for other errors. We then wait for the specified time before retrying, up to the maximum number of retries.
-# If all attempts fail, we log an error message indicating that the model failed after all attempts.
-                retryable = any(
-                    keyword in error_text
-                    for keyword in (
-                        "429",
-                        "RESOURCE_EXHAUSTED",
-                        "503",
-                        "UNAVAILABLE",
-                        "500",
-                        "INTERNAL",
-                    )
-                )
-
-                if not retryable:
-                    logger.error("Non-retryable Gemini error (%s): %s", model, e)
-                    raise
-#here we are handling retryable errors by checking for specific error messages and implementing a backoff strategy.
-                # Read Gemini RetryInfo (429 errors)
-                retry_match = re.search(
-                    r"retry in ([0-9.]+)s",
-                    error_text,
-                    re.IGNORECASE,
-                )
-
-                if retry_match:
-                    wait_time = float(retry_match.group(1))
-                else:
-                    wait_time = DEFAULT_BACKOFF * (2 ** (attempt - 1))
-
-                if attempt < MAX_MODEL_RETRIES:
+                if not is_retryable_error(error) or attempt == MAX_MODEL_ATTEMPTS:
                     logger.warning(
-                        "%s unavailable (Attempt %d/%d). Retrying in %.1fs...",
+                        "Gemini model %s failed on attempt %d: %s",
                         model,
                         attempt,
-                        MAX_MODEL_RETRIES,
-                        wait_time,
+                        error,
                     )
-                    time.sleep(wait_time)
-                else:
-                    logger.error(
-                        "%s failed after %d attempts.",
-                        model,
-                        MAX_MODEL_RETRIES,
-                    )
+                    break
 
-        raise last_error
+                delay = retry_delay(error, attempt)
+                logger.warning(
+                    "Gemini model %s had a temporary failure; retrying in %.2fs.",
+                    model,
+                    delay,
+                )
+                self.sleep(delay)
+
+        raise RuntimeError(f"Gemini model {model} failed.") from last_error
 
     # =======================================================
     # Public Generate Method
@@ -167,40 +145,33 @@ class GeminiLLM(LLM):
         """
         Generate text using primary model and fallback models.
 
-        Order:
-        1. gemini-3.5-flash
-        2. gemini-2.5-flash
-        3. gemini-2.5-flash-lite
+        Each model is attempted at most twice; only transient failures are retried.
         """
 
         models = [self.primary_model] + self.fallback_models
 
+        if self.client is None:
+            raise RuntimeError("GOOGLE_API_KEY is not configured.")
+
+        unique_models = list(dict.fromkeys(models))
         last_error = None
 
-        for model in models:
+        for model in unique_models:
             try:
                 return self._generate_with_retry(model, prompt)
 
             except Exception as e:
                 last_error = e
-
+                if (
+                    get_status_code(e) in {400, 401, 403}
+                    or str(e).startswith("Gemini rejected the request")
+                ):
+                    raise
                 logger.warning(
                     "Model %s failed. Trying next fallback model...",
                     model,
                 )
 
-        error_text = str(last_error)
-
-        if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-            raise RuntimeError(
-                "Gemini free-tier quota exceeded. Please retry after a few seconds."
-            ) from last_error
-
-        if "503" in error_text or "UNAVAILABLE" in error_text:
-            raise RuntimeError(
-                "Gemini service is temporarily unavailable. Please retry in a few minutes."
-            ) from last_error
-
         raise RuntimeError(
-            "Gemini request failed after all retry attempts."
+            "All configured Gemini models failed; check model availability and API quota."
         ) from last_error

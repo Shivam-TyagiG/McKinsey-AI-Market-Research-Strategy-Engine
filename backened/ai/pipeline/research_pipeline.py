@@ -1,9 +1,9 @@
-import time
 import logging
-import re
+import time
+from urllib.parse import urlsplit, urlunsplit
 
-from google.genai.errors import ServerError, ClientError
-
+from ai.browser.tavily_search import TavilySearchEngine
+from ai.llm.gemini import GeminiLLM
 from ai.planner.planner_agent import PlannerAgent
 from ai.research.research_agent import ResearchAgent
 from ai.extraction.extraction_agent import ExtractionAgent
@@ -17,17 +17,17 @@ from ai.schemas.research_task import ResearchTask
 from ai.schemas.source import Source
 from ai.schemas.evidence import Evidence
 from ai.schemas.validation import ValidationResult
+from ai.schemas.citation import Citation
+from ai.schemas.report_item import ReportItem
+from ai.schemas.linked_report import LinkedReport, LinkedReportItem
 
 logger = logging.getLogger(__name__)
 
 # ==========================================================
-# Retry & Pipeline Configuration
+# Pipeline Limits
 # ==========================================================
 
-MAX_GEMINI_RETRIES = 3          # Reduced from 5
-INITIAL_BACKOFF = 2             # Seconds
-REQUEST_DELAY = 1.0             # Delay between Gemini requests
-
+MAX_RESEARCH_TASKS = 6
 MAX_EXTRACTION_SOURCES = 6       # Extract only from best 6 sources
 MAX_VALIDATION_EVIDENCE = 30     # Validate top 30 evidence
 MAX_REPORT_EVIDENCE = 20         # Report uses top 20 evidence
@@ -44,108 +44,112 @@ class ResearchPipeline:
         citation_builder=None,
         report_linker=None,
     ):
-        self.planner = planner or PlannerAgent()
-        self.researcher = researcher or ResearchAgent()
-        self.extractor = extractor or ExtractionAgent()
-        self.validator = validator or ValidationAgent()
-        self.reporter = reporter or ReportAgent()
+        llm = GeminiLLM()
+        browser = TavilySearchEngine()
+        self.planner = planner or PlannerAgent(llm=llm)
+        self.researcher = researcher or ResearchAgent(search_engine=browser)
+        self.extractor = extractor or ExtractionAgent(llm=llm, browser=browser)
+        self.validator = validator or ValidationAgent(llm=llm)
+        self.reporter = reporter or ReportAgent(llm=llm)
         self.citation_builder = citation_builder or CitationBuilder()
         self.report_linker = report_linker or ReportLinker()
 
-    # ==========================================================
-    # Extract Retry Delay from Gemini Error
-    # ==========================================================
+    @staticmethod
+    def _canonical_url(url: str) -> str:
+        parsed = urlsplit(url.strip())
+        return urlunsplit((
+            parsed.scheme.lower(),
+            parsed.netloc.lower(),
+            parsed.path.rstrip("/"),
+            parsed.query,
+            "",
+        ))
 
     @staticmethod
-    def _extract_retry_delay(error: Exception):
-        """
-        Extract retry delay from Gemini RetryInfo.
+    def _fallback_task(query: str) -> ResearchTask:
+        return ResearchTask(
+            task_id="task_fallback_001",
+            query=query,
+            purpose="Broad research using the original brief because planning was unavailable.",
+        )
 
-        Example:
-            retryDelay: "12s"
-        """
+    @staticmethod
+    def _unique_tasks(tasks: list[ResearchTask]) -> list[ResearchTask]:
+        unique_tasks = []
+        seen_queries = set()
+        seen_ids = set()
 
-        text = str(error)
+        for index, task in enumerate(tasks, start=1):
+            normalized_query = " ".join(task.query.casefold().split())
+            if not normalized_query or normalized_query in seen_queries:
+                continue
 
-        match = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+)s", text)
+            if task.task_id in seen_ids:
+                task = task.model_copy(update={"task_id": f"task_deduplicated_{index:03d}"})
 
-        if match:
-            return int(match.group(1))
+            seen_queries.add(normalized_query)
+            seen_ids.add(task.task_id)
+            unique_tasks.append(task)
+            if len(unique_tasks) >= MAX_RESEARCH_TASKS:
+                break
 
-        return None
+        return unique_tasks
 
-    # ==========================================================
-    # Generic Retry Wrapper
-    # ==========================================================
+    @staticmethod
+    def _fallback_citations(sources: list[Source]) -> list[Citation]:
+        return [
+            Citation(
+                citation_id=f"citation_{index:03d}",
+                source_id=source.source_id,
+                title=source.title,
+                url=source.url,
+                publisher=source.publisher,
+                published_date=source.published_date,
+            )
+            for index, source in enumerate(sources, start=1)
+        ]
 
-    def _run_with_retry(self, func, stage_name: str, item_name: str):
-        """
-        Retry Gemini operations on retryable errors.
+    @staticmethod
+    def _fallback_report(
+        tasks: list[ResearchTask],
+        evidences: list[Evidence],
+        citations: list[Citation],
+        warnings: list[str],
+    ):
+        title = next((task.query.splitlines()[0].strip() for task in tasks if task.query.strip()), "Research brief")
+        title = f"{title[:100]}: Evidence Brief (Fallback)"
+        return ReportAgent.build_evidence_fallback(
+            title=title,
+            evidences=evidences,
+            citations=citations,
+            warnings=warnings,
+        )
 
-        Retryable:
-        429, 500, 502, 503, 504
-        """
+    @staticmethod
+    def _source_fallback_report(query: str, citations: list[Citation], warnings: list[str]):
+        title = query.splitlines()[0].strip() if query.strip() else "Research brief"
+        return ReportAgent.build_source_fallback(
+            title=title,
+            citations=citations,
+            warnings=warnings,
+        )
 
-        retryable_codes = ["429", "500", "502", "503", "504"]
+    @staticmethod
+    def _fallback_linked_report(report):
+        def unlinked(items):
+            return [LinkedReportItem(text=item.text, sources=[]) for item in items]
 
-        for attempt in range(1, MAX_GEMINI_RETRIES + 1):
-
-            try:
-                logger.info(
-                    "%s: Processing %s (Attempt %d/%d)",
-                    stage_name,
-                    item_name,
-                    attempt,
-                    MAX_GEMINI_RETRIES,
-                )
-
-                return func()
-
-            except (ServerError, ClientError, RuntimeError) as e:
-
-                error_text = str(e)
-
-                retryable = any(
-                    code in error_text for code in retryable_codes
-                )
-
-                if not retryable:
-                    logger.exception(
-                        "%s: Non-retryable Gemini error while processing %s",
-                        stage_name,
-                        item_name,
-                    )
-                    raise
-
-                if attempt == MAX_GEMINI_RETRIES:
-                    logger.error(
-                        "%s: Failed after %d retries for %s",
-                        stage_name,
-                        MAX_GEMINI_RETRIES,
-                        item_name,
-                    )
-                    raise RuntimeError(
-                        "Gemini is temporarily unavailable after multiple retries. Please retry in a few minutes."
-                    ) from e
-
-                retry_delay = self._extract_retry_delay(e)
-
-                if retry_delay:
-                    wait_time = retry_delay
-                else:
-                    wait_time = INITIAL_BACKOFF * (2 ** (attempt - 1))
-
-                logger.warning(
-                    "%s: Retryable Gemini error while processing %s. Waiting %.1fs before retry (%d/%d). Error: %s",
-                    stage_name,
-                    item_name,
-                    wait_time,
-                    attempt,
-                    MAX_GEMINI_RETRIES,
-                    error_text,
-                )
-
-                time.sleep(wait_time)
+        return LinkedReport(
+            title=report.title,
+            executive_summary=report.executive_summary,
+            key_findings=unlinked(report.key_findings),
+            market_signals=unlinked(report.market_signals),
+            competitor_observations=unlinked(report.competitor_observations),
+            implications=unlinked(report.implications),
+            recommendations=unlinked(report.recommendations),
+            evidence_appendix=report.evidence_appendix,
+            citations=report.citations,
+        )
 
     # ==========================================================
     # Main Research Pipeline
@@ -154,6 +158,7 @@ class ResearchPipeline:
     def run(self, query: str) -> ResearchResult:
 
         pipeline_start = time.time()
+        warnings: list[str] = []
 
         try:
 
@@ -165,14 +170,22 @@ class ResearchPipeline:
 
             stage_start = time.time()
 
-            tasks: list[ResearchTask] = self._run_with_retry(
-                lambda: self.planner.create_plan(query),
-                stage_name="Planner",
-                item_name="Research Plan",
-            )
+            try:
+                tasks: list[ResearchTask] = self.planner.create_plan(query)
+            except Exception as error:
+                logger.warning("Planner failed; using one broad research task: %s", error)
+                warnings.append("Planning was unavailable; research used the original brief.")
+                tasks = []
 
             if not tasks:
-                raise ValueError("Planner returned no research tasks.")
+                if not warnings:
+                    warnings.append("Planner returned no tasks; research used the original brief.")
+                tasks = [self._fallback_task(query)]
+
+            tasks = self._unique_tasks(tasks)
+            if not tasks:
+                warnings.append("The plan contained no unique research tasks; research used the original brief.")
+                tasks = [self._fallback_task(query)]
 
             logger.info(
                 "Planner generated %d research tasks in %.2fs.",
@@ -190,8 +203,21 @@ class ResearchPipeline:
 
             sources: list[Source] = []
 
+            seen_urls = set()
             for task in tasks:
-                sources.extend(self.researcher.research(task))
+                try:
+                    task_sources = self.researcher.research(task)
+                except Exception as error:
+                    logger.warning("Research failed for task %s: %s", task.task_id, error)
+                    warnings.append(f"Search failed for one task: {task.purpose}")
+                    continue
+
+                for source in task_sources:
+                    canonical_url = self._canonical_url(source.url)
+                    if not canonical_url or canonical_url in seen_urls:
+                        continue
+                    seen_urls.add(canonical_url)
+                    sources.append(source)
 
             if not sources:
                 raise ValueError("Research agent returned no sources.")
@@ -211,6 +237,7 @@ class ResearchPipeline:
             stage_start = time.time()
 
             evidences: list[Evidence] = []
+            seen_evidence_ids = set()
 
             sources_to_extract = sources[:MAX_EXTRACTION_SOURCES]
 
@@ -222,19 +249,39 @@ class ResearchPipeline:
 
             for index, source in enumerate(sources_to_extract, start=1):
 
-                source_evidence = self._run_with_retry(
-                    lambda s=source: self.extractor.extract(s),
-                    stage_name="Extraction",
-                    item_name=f"Source {index}/{len(sources_to_extract)}",
-                )
+                try:
+                    source_evidence = self.extractor.extract(source)
+                except Exception as error:
+                    logger.warning(
+                        "Extraction failed for source %s (%d/%d): %s",
+                        source.source_id,
+                        index,
+                        len(sources_to_extract),
+                        error,
+                    )
+                    warnings.append(f"Evidence extraction failed for source: {source.title}")
+                    continue
 
-                evidences.extend(source_evidence)
+                if not source_evidence:
+                    warnings.append(f"No usable evidence was extracted from source: {source.title}")
+                    continue
 
-                if index < len(sources_to_extract):
-                    time.sleep(REQUEST_DELAY)
+                for evidence in source_evidence:
+                    if evidence.source_id != source.source_id:
+                        logger.warning(
+                            "Ignoring evidence with mismatched source id from %s.",
+                            source.source_id,
+                        )
+                        continue
+                    if evidence.evidence_id in seen_evidence_ids:
+                        continue
+                    seen_evidence_ids.add(evidence.evidence_id)
+                    evidences.append(evidence)
 
             if not evidences:
-                raise ValueError("Extraction agent returned no evidence.")
+                warnings.append(
+                    "Sources were found, but no usable evidence claims could be extracted."
+                )
 
             logger.info(
                 "Extraction produced %d evidence items in %.2fs.",
@@ -262,21 +309,23 @@ class ResearchPipeline:
                 len(evidences),
             )
 
-            time.sleep(REQUEST_DELAY)
+            if validation_evidence:
+                try:
+                    validations: list[ValidationResult] = self.validator.validate(
+                        evidences=validation_evidence,
+                        sources=sources,
+                    )
+                except Exception as error:
+                    logger.warning("Evidence validation failed; continuing with unvalidated evidence: %s", error)
+                    warnings.append("Evidence validation was unavailable; report claims are not independently validated.")
+                    validations = []
+            else:
+                validations = []
 
-            validations: list[ValidationResult] = self._run_with_retry(
-                lambda: self.validator.validate(
-                    evidences=validation_evidence,
-                    sources=sources,
-                ),
-                stage_name="Validation",
-                item_name="Evidence Batch",
-            )
-
-            if not validations:
-                raise ValueError(
-                    "Validation agent returned no validation results."
-                )
+            if evidences and not validations and not any("validation" in warning.lower() for warning in warnings):
+                warnings.append("No evidence validation results were available; report claims are not independently validated.")
+            elif validations and len(validations) < len(evidences):
+                warnings.append("Some evidence could not be validated; unvalidated claims are identified in the report warnings.")
 
             logger.info(
                 "Validation produced %d results in %.2fs.",
@@ -292,10 +341,16 @@ class ResearchPipeline:
 
             stage_start = time.time()
 
-            citations = self.citation_builder.build(sources)
+            try:
+                citations = self.citation_builder.build(sources)
+            except Exception as error:
+                logger.warning("Citation builder failed; using source metadata: %s", error)
+                warnings.append("Citation formatting used source metadata fallback.")
+                citations = self._fallback_citations(sources)
 
             if not citations:
-                raise ValueError("Citation builder returned no citations.")
+                citations = self._fallback_citations(sources)
+                warnings.append("Citation formatting used source metadata fallback.")
 
             logger.info(
                 "Generated %d citations in %.2fs.",
@@ -320,21 +375,34 @@ class ResearchPipeline:
             else:
                 top_evidence = validation_evidence
 
-            time.sleep(REQUEST_DELAY)
+            validation_map = {item.evidence_id: item for item in validations}
+            top_evidence = [
+                evidence
+                for evidence in top_evidence
+                if evidence.evidence_id not in validation_map
+                or validation_map[evidence.evidence_id].is_valid
+            ]
+            if evidences and not top_evidence:
+                raise ValueError("No evidence passed validation; a report cannot be generated safely.")
 
-            report = self._run_with_retry(
-                lambda: self.reporter.generate_report(
-                    tasks=tasks,
-                    evidences=top_evidence,
-                    validations=validations,
-                    citations=citations,
-                ),
-                stage_name="Report",
-                item_name="Final Report",
-            )
+            if not top_evidence:
+                report = self._source_fallback_report(query, citations, warnings)
+            else:
+                try:
+                    report = self.reporter.generate_report(
+                        tasks=tasks,
+                        evidences=top_evidence,
+                        validations=validations,
+                        citations=citations,
+                    )
+                    if not report:
+                        raise ValueError("Report agent returned no report.")
+                except Exception as error:
+                    logger.warning("Report synthesis failed; creating an evidence-only report: %s", error)
+                    warnings.append("AI report synthesis was unavailable; this is an evidence-only fallback report.")
+                    report = self._fallback_report(tasks, top_evidence, citations, warnings)
 
-            if not report:
-                raise ValueError("Report agent returned no report.")
+            report.warnings = list(dict.fromkeys(warnings))
 
             logger.info(
                 "Report generated in %.2fs.",
@@ -349,11 +417,17 @@ class ResearchPipeline:
 
             stage_start = time.time()
 
-            linked_report = self.report_linker.link_report(
-                report=report,
-                evidences=evidences,
-                citations=citations,
-            )
+            try:
+                linked_report = self.report_linker.link_report(
+                    report=report,
+                    evidences=evidences,
+                    citations=citations,
+                )
+            except Exception as error:
+                logger.exception("Report linking failed; returning an unlinked report: %s", error)
+                warnings.append("Automatic source linking was unavailable; citations remain in the report appendix.")
+                report.warnings = list(dict.fromkeys(warnings))
+                linked_report = self._fallback_linked_report(report)
 
             if not linked_report:
                 raise ValueError(
@@ -378,24 +452,12 @@ class ResearchPipeline:
                 sources=sources,
                 evidences=evidences,
                 validations=validations,
+                warnings=list(dict.fromkeys(warnings)),
             )
 
         # ======================================================
         # Error Handling
         # ======================================================
-
-        except RuntimeError:
-            logger.exception(
-                "Pipeline stopped because Gemini remained unavailable."
-            )
-            raise
-
-        except (ServerError, ClientError) as e:
-            logger.exception("Unhandled Gemini API error.")
-
-            raise RuntimeError(
-                "Gemini is temporarily unavailable. Please retry."
-            ) from e
 
         except Exception:
             logger.exception(

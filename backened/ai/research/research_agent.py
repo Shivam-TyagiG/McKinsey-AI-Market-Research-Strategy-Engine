@@ -8,8 +8,8 @@ from ai.schemas.source import Source
 
 class ResearchAgent:
 
-    def __init__(self):
-        self.search_engine = TavilySearchEngine()
+    def __init__(self, search_engine=None):
+        self.search_engine = search_engine or TavilySearchEngine()
 
     def research(self, task: ResearchTask) -> list[Source]:
         results = self.search_engine.search(task.query)
@@ -37,7 +37,8 @@ class ResearchAgent:
                 source_type=self._classify_source(url),
                 publisher=result.get("publisher"),
                 published_date=result.get("published_date"),
-                retrieved_at=datetime.now(timezone.utc)
+                retrieved_at=datetime.now(timezone.utc),
+                content=result.get("content"),
             )
 
             sources.append(source)

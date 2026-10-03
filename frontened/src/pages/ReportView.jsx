@@ -184,6 +184,22 @@ export default function ReportView() {
                   {report.executive_summary}
                 </p>
               </div>
+              {report.warnings?.length > 0 && (
+                <div
+                  role="status"
+                  className="mt-4 rounded-md border border-gold/30 bg-gold-dim/30 px-4 py-3 text-sm text-ink-soft"
+                >
+                  <div className="mb-2 flex items-center gap-2 font-medium text-ink">
+                    <AlertCircle size={15} className="text-gold" />
+                    Research completed with limitations
+                  </div>
+                  <ul className="list-disc space-y-1 pl-5">
+                    {report.warnings.map((warning, index) => (
+                      <li key={`${index}-${warning}`}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </header>
 
             <div className="mt-8 flex gap-1 border-b border-line">

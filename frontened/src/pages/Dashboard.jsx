@@ -62,9 +62,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     // This effect runs when the component mounts, 
     // and it calls the loadJobs function to fetch the user's research jobs from the API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadJobs();
   }, []);
 

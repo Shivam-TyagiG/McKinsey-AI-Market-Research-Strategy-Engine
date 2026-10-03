@@ -6,6 +6,7 @@ from ai.schemas.evidence import Evidence
 from ai.schemas.validation import ValidationResult
 from ai.schemas.research_task import ResearchTask
 from ai.schemas.report import Report
+from ai.schemas.report_item import ReportItem
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,51 @@ class ReportAgent:
 
     def __init__(self, llm=None):
         self.llm = llm or GeminiLLM()
+
+    @staticmethod
+    def build_evidence_fallback(title, evidences, citations, warnings):
+      if not evidences:
+        raise ValueError("Cannot build a fallback report without evidence.")
+
+      findings = [
+        ReportItem(text=evidence.claim, evidence_ids=[evidence.evidence_id])
+        for evidence in evidences[:MAX_REPORT_EVIDENCE]
+      ]
+      return Report(
+        title=title,
+        executive_summary=(
+          f"AI report synthesis was unavailable. This evidence-only brief "
+          f"contains {len(findings)} extracted claims; review the warnings "
+          "before using it for decisions."
+        ),
+        key_findings=findings,
+        market_signals=[],
+        competitor_observations=[],
+        implications=[],
+        recommendations=[],
+        evidence_appendix=[item.evidence_ids[0] for item in findings],
+        citations=citations,
+        warnings=warnings,
+      )
+
+    @staticmethod
+    def build_source_fallback(title, citations, warnings):
+      return Report(
+        title=f"{title[:100]}: Source Brief (Fallback)",
+        executive_summary=(
+          "Sources were found, but no usable claims could be extracted. "
+          "This brief contains no findings or recommendations; review the cited "
+          "source material directly."
+        ),
+        key_findings=[],
+        market_signals=[],
+        competitor_observations=[],
+        implications=[],
+        recommendations=[],
+        evidence_appendix=[],
+        citations=citations,
+        warnings=warnings,
+      )
 
     # -------------------------------------------------------
     # Generate Final Research Report
@@ -92,12 +138,12 @@ class ReportAgent:
         prompt = f"""
 You are a senior McKinsey strategy research analyst.
 
-Create a professional research report using ONLY the supplied research tasks and validated evidence.
+Create a professional research report using ONLY the supplied research tasks and available evidence. Validation signals may be missing for some or all evidence.
 
 RESEARCH TASKS:
 {json.dumps([task.model_dump() for task in tasks], indent=2)}
 
-VALIDATED EVIDENCE:
+AVAILABLE EVIDENCE:
 {json.dumps(report_evidence, indent=2)}
 
 Return ONLY valid JSON.
@@ -158,6 +204,43 @@ Rules:
 
             report = Report.model_validate(data)
 
+            valid_evidence_ids = {item["evidence_id"] for item in report_evidence}
+            for field in (
+                "key_findings",
+                "market_signals",
+                "competitor_observations",
+                "implications",
+                "recommendations",
+            ):
+                items = getattr(report, field)
+                setattr(
+                    report,
+                    field,
+                    [
+                        item.model_copy(update={
+                            "evidence_ids": [
+                                evidence_id
+                                for evidence_id in item.evidence_ids
+                                if evidence_id in valid_evidence_ids
+                            ]
+                        })
+                        for item in items
+                        if item.text.strip()
+                        and any(
+                            evidence_id in valid_evidence_ids
+                            for evidence_id in item.evidence_ids
+                        )
+                    ],
+                )
+            report.evidence_appendix = [
+                evidence_id
+                for evidence_id in report.evidence_appendix
+                if evidence_id in valid_evidence_ids
+            ]
+
+            if not report.key_findings:
+              raise ValueError("Report contained no findings linked to available evidence.")
+
             report.citations = citations
 
             logger.info("Research report generated successfully.")
@@ -165,9 +248,7 @@ Rules:
             return report
 
         except Exception as e:
-            logger.error("Invalid report returned by Gemini.")
-            logger.error(cleaned_response)
-
+            logger.warning("Invalid or unsupported report returned by Gemini: %s", e)
             raise ValueError(
                 "Report agent returned invalid report."
             ) from e

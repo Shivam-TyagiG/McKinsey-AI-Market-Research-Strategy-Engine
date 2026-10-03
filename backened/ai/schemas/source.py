@@ -10,3 +10,4 @@ class Source(BaseModel):
     publisher: str | None = None
     published_date: str | None = None
     retrieved_at: datetime
+    content: str | None = None

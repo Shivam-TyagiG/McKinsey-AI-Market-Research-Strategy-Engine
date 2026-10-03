@@ -1,7 +1,9 @@
 # FastAPI and project imports used for the research routes
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.core.auth import get_current_user
 from backend.services.research_service import ResearchService
@@ -19,6 +21,7 @@ from backend.repositories.report_repository import (ReportRepository)
 
 # Router
 router = APIRouter(prefix="/api/research",tags=["Research"])
+logger = logging.getLogger(__name__)
 
 
 
@@ -40,6 +43,7 @@ class ResearchResponse(BaseModel):
     status: str
     title: str
     executive_summary: str
+    warnings: list[str] = Field(default_factory=list)
 
 
 def _ensure_owner(job: dict, user) -> None:
@@ -136,7 +140,14 @@ def list_research_jobs(user=Depends(get_current_user)):
 def create_research(request: ResearchRequest,user=Depends(get_current_user)):
     try:
         research_brief = _build_research_brief(request)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        ) from e
 
+    job_id = None
+    try:
         job = research_job_repository.create_job(
             research_brief,
             created_by=user.id,
@@ -172,14 +183,7 @@ def create_research(request: ResearchRequest,user=Depends(get_current_user)):
             executive_summary=(
                 result.report.executive_summary
             ),
-        )
-
-    except ValueError as e:
-
-        # Invalid research input pipeline validation error
-        raise HTTPException(
-            status_code=400,
-            detail=str(e),
+            warnings=result.warnings,
         )
 
     except Exception as e:
@@ -188,17 +192,16 @@ def create_research(request: ResearchRequest,user=Depends(get_current_user)):
         # Mark job as fail
         try:
 
-            if "job_id" in locals():
-
+            if job_id:
                 research_job_repository.update_status(
                     job_id,
                     "failed",
                 )
 
         except Exception:
-            pass
+            logger.exception("Failed to mark research job %s as failed.", job_id)
 
-        print(f"Research pipeline failed: {e}")
+        logger.exception("Research pipeline failed for job %s: %s", job_id, e)
 
         raise HTTPException(
             status_code=500,
