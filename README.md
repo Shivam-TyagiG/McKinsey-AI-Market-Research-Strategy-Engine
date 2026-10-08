@@ -1604,7 +1604,7 @@ The original repository README lists the project authors as:
 - **Shivam Tyagi**
 - **Mayuri Laddha**
 - **Jignesh Kumar**
-- **Swapnil Pathare **
+- **Swapnil Pathare**
 
 ---
 
